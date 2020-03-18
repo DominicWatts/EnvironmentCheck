@@ -178,7 +178,7 @@ class Php extends Command
         $this->setName("xigen:check:platform");
         $this->setDescription("Check platform requirements");
         $this->setDefinition([
-            new InputOption(self::TYPE_OPTION, '-l', InputOption::VALUE_OPTIONAL, 'Type'),
+            new InputOption(self::TYPE_OPTION, '-t', InputOption::VALUE_OPTIONAL, 'Type'),
 
         ]);
         parent::configure();

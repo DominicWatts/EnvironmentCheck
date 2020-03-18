@@ -1,6 +1,6 @@
 # Php / Environemnt CLI Check
 
-CLI script to check php and environment settings
+CLI script to check Magento 2 php and environment settings ready for install or deployments
 
 # Install instructions #
 
@@ -23,6 +23,7 @@ Run console command
 ## Example Output
 
 ```
+php bin/magento xigen:check:platform
 0/2 [>---------------------------]   0%
 [2020-03-18 15:10:35] Start
 [2020-03-18 15:10:35] PHP Version Required : ~7.1.3||~7.2.0||~7.3.0
