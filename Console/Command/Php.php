@@ -101,6 +101,8 @@ class Php extends Command
             ));
         }
 
+        $this->output->writeln('');
+
         $progress->advance();
 
         $extensions = $this->phpExtensionsAction($type);

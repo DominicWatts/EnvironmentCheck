@@ -27,7 +27,8 @@ Run console command
 [2020-03-18 15:10:35] Start
 [2020-03-18 15:10:35] PHP Version Required : ~7.1.3||~7.2.0||~7.3.0
 [2020-03-18 15:10:35] PHP Version Current : 7.2.23
- 1/2 [==============>-------------]  50%[2020-03-18 15:10:35] PHP Extension Required : curl
+ 1/2 [==============>-------------]  50%
+[2020-03-18 15:10:35] PHP Extension Required : curl
 [2020-03-18 15:10:35] PHP Extension Required : iconv
 [2020-03-18 15:10:35] PHP Extension Required : mbstring
 [2020-03-18 15:10:35] PHP Extension Required : dom
