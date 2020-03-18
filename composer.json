@@ -1,0 +1,23 @@
+{
+    "name": "dominicwatts/environmentcheck",
+    "description": "",
+    "type": "magento2-module",
+    "license": "proprietary",
+    "authors": [
+        {
+            "name": "Dominic Xigen",
+            "email": "xigen.dominic@gmail.com"
+        }
+    ],
+    "version": "1.0.0",
+    "minimum-stability": "dev",
+    "require": {},
+    "autoload": {
+        "psr-4": {
+            "Xigen\\PhpCheck\\": ""
+        },
+        "files": [
+            "registration.php"
+        ]
+    }
+}
