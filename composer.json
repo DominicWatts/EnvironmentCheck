@@ -6,10 +6,10 @@
     "authors": [
         {
             "name": "Dominic Xigen",
-            "email": "xigen.dominic@gmail.com"
+            "email": "dominic@xigen.co.uk"
         }
     ],
-    "version": "1.0.3",
+    "version": "1.0.4",
     "minimum-stability": "dev",
     "require": {},
     "autoload": {

@@ -40,12 +40,14 @@ class Php extends Command
     protected $phpReadinessCheck;
 
     /**
-     * Constructor
-     *
+     * Console constructor
      * @param \Magento\Framework\Setup\FilePermissions $permissions
      * @param \Magento\Framework\Filesystem $filesystem
      * @param \Magento\Setup\Model\CronScriptReadinessCheck $cronScriptReadinessCheck
      * @param \Magento\Setup\Model\PhpReadinessCheck $phpReadinessCheck
+     * @param \Psr\Log\LoggerInterface $logger
+     * @param \Magento\Framework\App\State $state
+     * @param \Magento\Framework\Stdlib\DateTime\DateTime $dateTime
      */
     public function __construct(
         \Magento\Framework\Setup\FilePermissions $permissions,
@@ -80,7 +82,7 @@ class Php extends Command
 
         $this->output->writeln((string) __('[%1] Start', $this->dateTime->gmtDate()));
 
-        $progress = new ProgressBar($this->output, 3);
+        $progress = new ProgressBar($this->output, 4);
         $progress->start();
 
         $this->output->writeln('');
@@ -138,7 +140,6 @@ class Php extends Command
         $this->output->writeln('');
 
         $settings = $this->phpSettingsAction($type);
-        // var_dump($settings);
         foreach ($settings['data'] as $key => $setting) {
             $this->output->writeln((string) __(
                 '[%1] <error>PHP Setting</error> Update : <error>%2</error>',
@@ -148,6 +149,25 @@ class Php extends Command
         }
 
         $progress->advance();
+        $this->output->writeln('');
+
+        $permissions = $this->filePermissionsAction();
+        if (isset($permissions['data']['missing'])) {
+            if (empty($permissions['data']['missing'])) {
+                $this->output->writeln((string) __(
+                    '[%1] <info>Permissions</info> Missing : <info>%2</info>',
+                    $this->dateTime->gmtDate(),
+                    'None'
+                ));
+            }
+            foreach ($permissions['data']['missing'] as $missing) {
+                $this->output->writeln((string) __(
+                    '[%1] <error>PPermissions</error> Missing : <error>%2</error>',
+                    $this->dateTime->gmtDate(),
+                    $missing
+                ));
+            }
+        }
 
         $progress->finish();
         $this->output->writeln('');
@@ -196,6 +216,37 @@ class Php extends Command
         } elseif ($type == ReadinessCheckUpdater::UPDATER) {
             $data = $this->getPhpChecksInfo(ReadinessCheck::KEY_PHP_SETTINGS_VERIFIED);
         }
+        return $data;
+    }
+
+    /**
+     * Verifies file permissions
+     * @return array
+     */
+    public function filePermissionsAction()
+    {
+        $missingWritePermissionPaths = $this->permissions->getMissingWritablePathsForInstallation(true);
+        $currentPaths = [];
+        $requiredPaths = [];
+        $missingPaths = [];
+        if ($missingWritePermissionPaths) {
+            foreach ($missingWritePermissionPaths as $key => $value) {
+                $requiredPaths[] = $key;
+                if (is_array($value)) {
+                    $missingPaths[] = $key;
+                } else {
+                    $currentPaths[] = $key;
+                }
+            }
+        }
+        $data = [
+            'data' => [
+                'required' => $requiredPaths,
+                'current' => $currentPaths,
+                'missing' => $missingPaths,
+            ],
+        ];
+
         return $data;
     }
 
