@@ -78,12 +78,13 @@ class Php extends Command
         $this->state->setAreaCode(\Magento\Framework\App\Area::AREA_FRONTEND);
         $type = $this->input->getOption(self::TYPE_OPTION) ?: 'installer';
 
-        $progress = new ProgressBar($this->output, 2);
+        $this->output->writeln((string) __('[%1] Start', $this->dateTime->gmtDate()));
+
+        $progress = new ProgressBar($this->output, 3);
         $progress->start();
 
         $this->output->writeln('');
-
-        $this->output->writeln((string) __('[%1] Start', $this->dateTime->gmtDate()));
+       
         $version = $this->phpVersionAction($type);
         if (isset($version['data']['required'])) {
             $this->output->writeln((string) __(
@@ -101,9 +102,9 @@ class Php extends Command
             ));
         }
 
-        $this->output->writeln('');
-
         $progress->advance();
+
+        $this->output->writeln('');
 
         $extensions = $this->phpExtensionsAction($type);
         if (isset($extensions['data']['required'])) {
@@ -134,6 +135,19 @@ class Php extends Command
         }
 
         $progress->advance();
+        $this->output->writeln('');
+
+        $settings = $this->phpSettingsAction($type);
+        // var_dump($settings);
+        foreach ($settings['data'] as $key => $setting) {
+            $this->output->writeln((string) __(
+                '[%1] <error>PHP Setting</error> Update : <error>%2</error>',
+                $this->dateTime->gmtDate(),
+                $setting['message']
+            ));
+        }
+
+        $progress->advance();
 
         $progress->finish();
         $this->output->writeln('');
@@ -142,7 +156,7 @@ class Php extends Command
 
     /**
      * Verifies php version
-     * @return \Zend\View\Model\JsonModel
+     * @return array
      */
     public function phpVersionAction($type)
     {
@@ -157,7 +171,7 @@ class Php extends Command
 
     /**
      * Verifies php verifications
-     * @return \Zend\View\Model\JsonModel
+     * @return array
      */
     public function phpExtensionsAction($type)
     {
@@ -166,6 +180,21 @@ class Php extends Command
             $data = $this->phpReadinessCheck->checkPhpExtensions();
         } elseif ($type == ReadinessCheckUpdater::UPDATER) {
             $data = $this->getPhpChecksInfo(ReadinessCheck::KEY_PHP_EXTENSIONS_VERIFIED);
+        }
+        return $data;
+    }
+
+    /**
+     * Checks PHP settings
+     * @return array
+     */
+    public function phpSettingsAction($type)
+    {
+        $data = [];
+        if ($type == ReadinessCheckInstaller::INSTALLER) {
+            $data = $this->phpReadinessCheck->checkPhpSettings();
+        } elseif ($type == ReadinessCheckUpdater::UPDATER) {
+            $data = $this->getPhpChecksInfo(ReadinessCheck::KEY_PHP_SETTINGS_VERIFIED);
         }
         return $data;
     }
