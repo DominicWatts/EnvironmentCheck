@@ -181,7 +181,7 @@ class Php extends Command
             }
             foreach ($permissions['data']['missing'] as $missing) {
                 $this->output->writeln((string) __(
-                    '[%1] <error>PPermissions</error> Missing : <error>%2</error>',
+                    '[%1] <error>Permissions</error> Missing : <error>%2</error>',
                     $this->dateTime->gmtDate(),
                     $missing
                 ));
