@@ -82,8 +82,27 @@ class Php extends Command
 
         $this->output->writeln((string) __('[%1] Start', $this->dateTime->gmtDate()));
 
-        $progress = new ProgressBar($this->output, 4);
+        $progress = new ProgressBar($this->output, 5);
         $progress->start();
+
+        $this->output->writeln('');
+
+        $memory = $this->phpMemoryLimitAction();
+        if (isset($version['memory_limit']['error']) && $version['memory_limit']['error']) {
+            $this->output->writeln((string) __(
+                '[%1] <warning>PHP Memory</warning> : %2 : %3',
+                $this->dateTime->gmtDate(),
+                $version['memory_limit']['warning'],
+                $version['memory_limit']['message']
+            ));
+        } else {
+            $this->output->writeln((string) __(
+                '[%1] <info>PHP Memory</info> : Requirements met',
+                $this->dateTime->gmtDate()
+            ));
+        }
+
+        $progress->advance();
 
         $this->output->writeln('');
        
@@ -217,6 +236,15 @@ class Php extends Command
             $data = $this->getPhpChecksInfo(ReadinessCheck::KEY_PHP_SETTINGS_VERIFIED);
         }
         return $data;
+    }
+
+    /**
+     * Checks PHP settings
+     * @return array
+     */
+    public function phpMemoryLimitAction()
+    {
+        return $this->phpReadinessCheck->checkMemoryLimit();
     }
 
     /**
