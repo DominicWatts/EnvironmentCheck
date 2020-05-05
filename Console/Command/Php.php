@@ -19,25 +19,39 @@ class Php extends Command
     const TYPE_OPTION = 'type';
 
     /**
-     * File system
-     *
+     * @var \Magento\Framework\Setup\FilePermissions
+     */
+    protected $permissions;
+
+    /**
      * @var \Magento\Framework\Filesystem
      */
     protected $filesystem;
 
     /**
-     * Cron Script Readiness Check
-     *
      * @var \Magento\Setup\Model\CronScriptReadinessCheck
      */
     protected $cronScriptReadinessCheck;
 
     /**
-     * PHP Readiness Check
-     *
      * @var \Magento\Setup\Model\PhpReadinessCheck
      */
     protected $phpReadinessCheck;
+
+    /**
+     * @var \Psr\Log\LoggerInterface
+     */
+    protected $logger;
+  
+    /**
+     * @var \Magento\Framework\App\State
+     */
+    protected $state;
+  
+    /**
+     * @var \Magento\Framework\Stdlib\DateTime\DateTime
+     */
+    protected $dateTime;
 
     /**
      * Console constructor
