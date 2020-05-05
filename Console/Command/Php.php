@@ -2,9 +2,12 @@
 
 namespace Xigen\PhpCheck\Console\Command;
 
+use Magento\Framework\App\Filesystem\DirectoryList;
 use Magento\Setup\Controller\Environment;
 use Magento\Setup\Controller\ReadinessCheckInstaller;
 use Magento\Setup\Controller\ReadinessCheckUpdater;
+use Magento\Setup\Controller\ResponseTypeInterface;
+use Magento\Setup\Model\Cron\ReadinessCheck;
 use Symfony\Component\Console\Command\Command;
 use Symfony\Component\Console\Helper\ProgressBar;
 use Symfony\Component\Console\Input\InputInterface;
@@ -19,25 +22,49 @@ class Php extends Command
     const TYPE_OPTION = 'type';
 
     /**
-     * File system
-     *
+     * @var \Magento\Framework\Setup\FilePermissions
+     */
+    protected $permissions;
+
+    /**
      * @var \Magento\Framework\Filesystem
      */
     protected $filesystem;
 
     /**
-     * Cron Script Readiness Check
-     *
      * @var \Magento\Setup\Model\CronScriptReadinessCheck
      */
     protected $cronScriptReadinessCheck;
 
     /**
-     * PHP Readiness Check
-     *
      * @var \Magento\Setup\Model\PhpReadinessCheck
      */
     protected $phpReadinessCheck;
+
+    /**
+     * @var \Psr\Log\LoggerInterface
+     */
+    protected $logger;
+
+    /**
+     * @var \Magento\Framework\App\State
+     */
+    protected $state;
+
+    /**
+     * @var \Magento\Framework\Stdlib\DateTime\DateTime
+     */
+    protected $dateTime;
+
+    /**
+     * @var InputInterface
+     */
+    protected $input;
+
+    /**
+     * @var OutputInterface
+     */
+    protected $output;
 
     /**
      * Console constructor
@@ -105,7 +132,7 @@ class Php extends Command
         $progress->advance();
 
         $this->output->writeln('');
-       
+
         $version = $this->phpVersionAction($type);
         if (isset($version['data']['required'])) {
             $this->output->writeln((string) __(
@@ -181,7 +208,7 @@ class Php extends Command
             }
             foreach ($permissions['data']['missing'] as $missing) {
                 $this->output->writeln((string) __(
-                    '[%1] <error>PPermissions</error> Missing : <error>%2</error>',
+                    '[%1] <error>Permissions</error> Missing : <error>%2</error>',
                     $this->dateTime->gmtDate(),
                     $missing
                 ));
@@ -276,6 +303,27 @@ class Php extends Command
         ];
 
         return $data;
+    }
+
+    /**
+     * Gets the PHP check info from Cron status file
+     * @param string $type
+     * @return array
+     */
+    private function getPhpChecksInfo($type)
+    {
+        $read = $this->filesystem->getDirectoryRead(DirectoryList::VAR_DIR);
+        try {
+            $jsonData = json_decode($read->readFile(ReadinessCheck::SETUP_CRON_JOB_STATUS_FILE), true);
+            if (isset($jsonData[ReadinessCheck::KEY_PHP_CHECKS])
+                && isset($jsonData[ReadinessCheck::KEY_PHP_CHECKS][$type])
+            ) {
+                return  $jsonData[ReadinessCheck::KEY_PHP_CHECKS][$type];
+            }
+            return ['responseType' => ResponseTypeInterface::RESPONSE_TYPE_ERROR];
+        } catch (\Exception $e) {
+            return ['responseType' => ResponseTypeInterface::RESPONSE_TYPE_ERROR];
+        }
     }
 
     /**

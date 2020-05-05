@@ -1,5 +1,11 @@
 # Php / Environemnt CLI Check
 
+![phpcs](https://github.com/DominicWatts/EnvironmentCheck/workflows/phpcs/badge.svg)
+
+![PHPCompatibility](https://github.com/DominicWatts/EnvironmentCheck/workflows/PHPCompatibility/badge.svg)
+
+![PHPStan](https://github.com/DominicWatts/EnvironmentCheck/workflows/PHPStan/badge.svg)
+
 CLI script to check php and environment settings
 
 # Install instructions #
