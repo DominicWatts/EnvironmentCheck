@@ -2,6 +2,7 @@
 
 namespace Xigen\PhpCheck\Console\Command;
 
+use Symfony\Component\Console\Helper\Table;
 use Magento\Framework\App\Filesystem\DirectoryList;
 use Magento\Setup\Controller\Environment;
 use Magento\Setup\Controller\ReadinessCheckInstaller;
@@ -10,9 +11,17 @@ use Magento\Setup\Controller\ResponseTypeInterface;
 use Magento\Setup\Model\Cron\ReadinessCheck;
 use Symfony\Component\Console\Command\Command;
 use Symfony\Component\Console\Helper\ProgressBar;
+use Symfony\Component\Console\Helper\ProgressBarFactory;
 use Symfony\Component\Console\Input\InputInterface;
 use Symfony\Component\Console\Input\InputOption;
 use Symfony\Component\Console\Output\OutputInterface;
+use Magento\Framework\Setup\FilePermissions;
+use Magento\Framework\Filesystem;
+use Magento\Setup\Model\CronScriptReadinessCheck;
+use Magento\Setup\Model\PhpReadinessCheck;
+use Psr\Log\LoggerInterface;
+use Magento\Framework\App\State;
+use Magento\Framework\Stdlib\DateTime\DateTime;
 
 /**
  * Environment check Php console command
@@ -67,6 +76,11 @@ class Php extends Command
     protected $output;
 
     /**
+     * @var ProgressBarFactory
+     */
+    protected $progressBarFactory;
+
+    /**
      * Console constructor
      * @param \Magento\Framework\Setup\FilePermissions $permissions
      * @param \Magento\Framework\Filesystem $filesystem
@@ -77,13 +91,14 @@ class Php extends Command
      * @param \Magento\Framework\Stdlib\DateTime\DateTime $dateTime
      */
     public function __construct(
-        \Magento\Framework\Setup\FilePermissions $permissions,
-        \Magento\Framework\Filesystem $filesystem,
-        \Magento\Setup\Model\CronScriptReadinessCheck $cronScriptReadinessCheck,
-        \Magento\Setup\Model\PhpReadinessCheck $phpReadinessCheck,
-        \Psr\Log\LoggerInterface $logger,
-        \Magento\Framework\App\State $state,
-        \Magento\Framework\Stdlib\DateTime\DateTime $dateTime
+        FilePermissions $permissions,
+        Filesystem $filesystem,
+        CronScriptReadinessCheck $cronScriptReadinessCheck,
+        PhpReadinessCheck $phpReadinessCheck,
+        LoggerInterface $logger,
+        State $state,
+        DateTime $dateTime,
+        ProgressBarFactory $progressBarFactory
     ) {
         $this->permissions = $permissions;
         $this->filesystem = $filesystem;
@@ -92,6 +107,7 @@ class Php extends Command
         $this->logger = $logger;
         $this->state = $state;
         $this->dateTime = $dateTime;
+        $this->progressBarFactory = $progressBarFactory;
         parent::__construct();
     }
 
@@ -109,113 +125,172 @@ class Php extends Command
 
         $this->output->writeln((string) __('[%1] Start', $this->dateTime->gmtDate()));
 
-        $progress = new ProgressBar($this->output, 5);
-        $progress->start();
-
-        $this->output->writeln('');
-
         $memory = $this->phpMemoryLimitAction();
-        if (isset($version['memory_limit']['error']) && $version['memory_limit']['error']) {
-            $this->output->writeln((string) __(
-                '[%1] <warning>PHP Memory</warning> : %2 : %3',
-                $this->dateTime->gmtDate(),
-                $version['memory_limit']['warning'],
-                $version['memory_limit']['message']
+        $version = $this->phpVersionAction($type);
+        $extensions = $this->phpExtensionsAction($type);
+        $settings = $this->phpSettingsAction($type);
+        $permissions = $this->filePermissionsAction();
+
+        $table = new Table($output);
+
+        $checkCount = 3;
+        if (isset($extensions['data']['required'])) {
+            $checkCount += count($extensions['data']['required']);
+        }
+        if (isset($extensions['data']['missing'])) {
+            $checkCount += count($extensions['data']['missing']);
+        }
+        $checkCount += count($settings['data']);
+        if (isset($permissions['data']['missing'])) {
+            $checkCount += count($permissions['data']['missing']);
+        }
+
+        /** @var ProgressBar $progress */
+        $progress = $this->progressBarFactory->create(
+            [
+                'output' => $this->output,
+                'max' => $checkCount
+            ]
+        );
+
+        $progress->setFormat(
+            "%current%/%max% [%bar%] %percent:3s%% %elapsed% %memory:6s% \t| %message%"
+        );
+
+        if ($output->getVerbosity() !== OutputInterface::VERBOSITY_NORMAL) {
+            $progress->setOverwrite(false);
+        }
+
+        $table->setHeaders(['Test', 'Result']);
+
+        if (isset($memory['memory_limit']['error']) && $memory['memory_limit']['error']) {
+            $progress->setMessage((string) __(
+                '%1 : %2',
+                $memory['memory_limit']['warning'],
+                $memory['memory_limit']['message']
             ));
+            $table->addRow([
+                '<warning>PHP Memory</warning>',
+                $progress->getMessage()
+            ]);
         } else {
-            $this->output->writeln((string) __(
-                '[%1] <info>PHP Memory</info> : Requirements met',
-                $this->dateTime->gmtDate()
+            $progress->setMessage((string) __(
+                'Requirements met'
             ));
+            $table->addRow([
+                '<info>PHP Memory</info>',
+                $progress->getMessage()
+            ]);
         }
 
         $progress->advance();
 
-        $this->output->writeln('');
-
-        $version = $this->phpVersionAction($type);
         if (isset($version['data']['required'])) {
-            $this->output->writeln((string) __(
-                '[%1] <info>PHP Version</info> Required : %2',
-                $this->dateTime->gmtDate(),
+            $progress->setMessage((string) __(
+                'Required : %1',
                 $version['data']['required']
             ));
+            $table->addRow([
+                '<info>PHP Version</info>',
+                $progress->getMessage()
+            ]);
         }
 
         if (isset($version['data']['current'])) {
-            $this->output->writeln((string) __(
-                '[%1] <info>PHP Version</info> Current : %2',
-                $this->dateTime->gmtDate(),
+            $progress->setMessage((string) __(
+                'Current : %1',
                 $version['data']['current']
             ));
+            $table->addRow([
+                '<info>PHP Version</info>',
+                $progress->getMessage()
+            ]);
         }
 
         $progress->advance();
 
-        $this->output->writeln('');
-
-        $extensions = $this->phpExtensionsAction($type);
         if (isset($extensions['data']['required'])) {
             foreach ($extensions['data']['required'] as $required) {
-                $this->output->writeln((string) __(
-                    '[%1] <info>PHP Extension</info> Required : %2',
-                    $this->dateTime->gmtDate(),
+                $progress->setMessage((string) __(
+                    'Required : %1',
                     $required
                 ));
+                $table->addRow([
+                    '<info>PHP Extension</info>',
+                    $progress->getMessage()
+                ]);
+                $progress->advance();
             }
         }
 
         if (isset($extensions['data']['missing'])) {
             if (empty($extensions['data']['missing'])) {
-                $this->output->writeln((string) __(
-                    '[%1] <info>PHP Extension</info> Missing : <info>%2</info>',
-                    $this->dateTime->gmtDate(),
+                $progress->setMessage((string) __(
+                    'Missing : <info>%1</info>',
                     'None'
                 ));
+                $table->addRow([
+                    '<info>PHP Extension</info>',
+                    $progress->getMessage()
+                ]);
+                $progress->advance();
             }
             foreach ($extensions['data']['missing'] as $missing) {
-                $this->output->writeln((string) __(
-                    '[%1] <error>PHP Extension</error> Missing : <error>%2</error>',
-                    $this->dateTime->gmtDate(),
+                $progress->setMessage((string) __(
+                    'Missing : <error>%1</error>',
                     $missing
                 ));
+                $table->addRow([
+                    '<error>PHP Extension</error>',
+                    $progress->getMessage()
+                ]);
+                $progress->advance();
             }
         }
 
-        $progress->advance();
-        $this->output->writeln('');
-
-        $settings = $this->phpSettingsAction($type);
         foreach ($settings['data'] as $key => $setting) {
-            $this->output->writeln((string) __(
-                '[%1] <error>PHP Setting</error> Update : <error>%2</error>',
-                $this->dateTime->gmtDate(),
+            $progress->setMessage((string) __(
+                'Update : <error>%1</error>',
                 $setting['message']
             ));
+            $table->addRow([
+                '<error>PHP Setting</error>',
+                $progress->getMessage()
+            ]);
+            $progress->advance();
         }
-
-        $progress->advance();
-        $this->output->writeln('');
-
-        $permissions = $this->filePermissionsAction();
+        
         if (isset($permissions['data']['missing'])) {
             if (empty($permissions['data']['missing'])) {
-                $this->output->writeln((string) __(
-                    '[%1] <info>Permissions</info> Missing : <info>%2</info>',
-                    $this->dateTime->gmtDate(),
+                $progress->setMessage((string) __(
+                    'Missing : <info>%1</info>',
                     'None'
                 ));
+                $table->addRow([
+                    '<info>Permissions</info>',
+                    $progress->getMessage()
+                ]);
+                $progress->advance();
             }
             foreach ($permissions['data']['missing'] as $missing) {
-                $this->output->writeln((string) __(
-                    '[%1] <error>Permissions</error> Missing : <error>%2</error>',
-                    $this->dateTime->gmtDate(),
+                $progress->setMessage((string) __(
+                    'Missing : <error>%1</error>',
                     $missing
                 ));
+                $table->addRow([
+                    '<error>Permissions</error>',
+                    $progress->getMessage()
+                ]);
+                $progress->advance();
             }
         }
 
         $progress->finish();
+
+        $this->output->writeln('');
+
+        $table->render();
+        
         $this->output->writeln('');
         $this->output->writeln((string) __('[%1] Finish', $this->dateTime->gmtDate()));
     }

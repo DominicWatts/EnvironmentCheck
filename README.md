@@ -18,9 +18,13 @@ CLI script to check php and environment settings
 
 Run console command
 
-`xigen:check:platform [-t|--type TYPE]`
+`xigen:check:platform [-t|--type TYPE] [--]`
 
     php/bin magento xigen:check:platform
+    
+Verbose output
+
+    php/bin magento xigen:check:platform -v
 
     php/bin magento xigen:check:platform -t installer
 
@@ -29,35 +33,40 @@ Run console command
 ## Example Output
 
 ```
-[2020-03-18 17:23:41] Start
- 0/4 [>---------------------------]   0%
-[2020-03-18 17:23:41] PHP Version Required : ~7.1.3||~7.2.0||~7.3.0
-[2020-03-18 17:23:41] PHP Version Current : 7.2.23
- 1/4 [=======>--------------------]  25%
-[2020-03-18 17:23:41] PHP Extension Required : curl
-[2020-03-18 17:23:41] PHP Extension Required : iconv
-[2020-03-18 17:23:41] PHP Extension Required : mbstring
-[2020-03-18 17:23:41] PHP Extension Required : dom
-[2020-03-18 17:23:41] PHP Extension Required : hash
-[2020-03-18 17:23:41] PHP Extension Required : openssl
-[2020-03-18 17:23:41] PHP Extension Required : xmlwriter
-[2020-03-18 17:23:41] PHP Extension Required : pcre
-[2020-03-18 17:23:41] PHP Extension Required : json
-[2020-03-18 17:23:41] PHP Extension Required : gd
-[2020-03-18 17:23:41] PHP Extension Required : bcmath
-[2020-03-18 17:23:41] PHP Extension Required : simplexml
-[2020-03-18 17:23:41] PHP Extension Required : spl
-[2020-03-18 17:23:41] PHP Extension Required : xsl
-[2020-03-18 17:23:41] PHP Extension Required : intl
-[2020-03-18 17:23:41] PHP Extension Required : ctype
-[2020-03-18 17:23:41] PHP Extension Required : pdo_mysql
-[2020-03-18 17:23:41] PHP Extension Required : soap
-[2020-03-18 17:23:41] PHP Extension Required : zip
-[2020-03-18 17:23:41] PHP Extension Required : libxml
-[2020-03-18 17:23:41] PHP Extension Missing : None
- 2/4 [==============>-------------]  50%
-[2020-03-18 17:23:41] PHP Setting Update : You must have installed GD library with --with-jpeg-dir=DIR option.
- 3/4 [=====================>------]  75%
-[2020-03-18 17:23:41] Permissions Missing : None
- 4/4 [============================] 100%
+bin/magento xigen:check:platform
+[2020-06-06 09:13:52] Start
+26/26 [============================] 100% < 1 sec 70.2 MiB      | Missing : None
++---------------+------------------------------------------------------------------------------+
+| Test          | Result                                                                       |
++---------------+------------------------------------------------------------------------------+
+| PHP Memory    | Requirements met                                                             |
+| PHP Version   | Required : ~7.1.3||~7.2.0                                                    |
+| PHP Version   | Current : 7.2.23                                                             |
+| PHP Extension | Required : iconv                                                             |
+| PHP Extension | Required : mbstring                                                          |
+| PHP Extension | Required : curl                                                              |
+| PHP Extension | Required : dom                                                               |
+| PHP Extension | Required : hash                                                              |
+| PHP Extension | Required : openssl                                                           |
+| PHP Extension | Required : xmlwriter                                                         |
+| PHP Extension | Required : pcre                                                              |
+| PHP Extension | Required : json                                                              |
+| PHP Extension | Required : gd                                                                |
+| PHP Extension | Required : bcmath                                                            |
+| PHP Extension | Required : simplexml                                                         |
+| PHP Extension | Required : spl                                                               |
+| PHP Extension | Required : xsl                                                               |
+| PHP Extension | Required : intl                                                              |
+| PHP Extension | Required : ctype                                                             |
+| PHP Extension | Required : pdo_mysql                                                         |
+| PHP Extension | Required : soap                                                              |
+| PHP Extension | Required : zip                                                               |
+| PHP Extension | Required : libxml                                                            |
+| PHP Extension | Required : phar                                                              |
+| PHP Extension | Missing : None                                                               |
+| PHP Setting   | Update : You must have installed GD library with --with-jpeg-dir=DIR option. |
+| Permissions   | Missing : None                                                               |
++---------------+------------------------------------------------------------------------------+
+
+[2020-06-06 09:13:52] Finish
 ```
