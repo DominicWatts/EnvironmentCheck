@@ -10,9 +10,17 @@ use Magento\Setup\Controller\ResponseTypeInterface;
 use Magento\Setup\Model\Cron\ReadinessCheck;
 use Symfony\Component\Console\Command\Command;
 use Symfony\Component\Console\Helper\ProgressBar;
+use Symfony\Component\Console\Helper\ProgressBarFactory;
 use Symfony\Component\Console\Input\InputInterface;
 use Symfony\Component\Console\Input\InputOption;
 use Symfony\Component\Console\Output\OutputInterface;
+use Magento\Framework\Setup\FilePermissions;
+use Magento\Framework\Filesystem;
+use Magento\Setup\Model\CronScriptReadinessCheck;
+use Magento\Setup\Model\PhpReadinessCheck;
+use Psr\Log\LoggerInterface;
+use Magento\Framework\App\State;
+use Magento\Framework\Stdlib\DateTime\DateTime;
 
 /**
  * Environment check Php console command
@@ -67,6 +75,11 @@ class Php extends Command
     protected $output;
 
     /**
+     * @var ProgressBarFactory
+     */
+    protected $progressBarFactory;
+
+    /**
      * Console constructor
      * @param \Magento\Framework\Setup\FilePermissions $permissions
      * @param \Magento\Framework\Filesystem $filesystem
@@ -77,13 +90,14 @@ class Php extends Command
      * @param \Magento\Framework\Stdlib\DateTime\DateTime $dateTime
      */
     public function __construct(
-        \Magento\Framework\Setup\FilePermissions $permissions,
-        \Magento\Framework\Filesystem $filesystem,
-        \Magento\Setup\Model\CronScriptReadinessCheck $cronScriptReadinessCheck,
-        \Magento\Setup\Model\PhpReadinessCheck $phpReadinessCheck,
-        \Psr\Log\LoggerInterface $logger,
-        \Magento\Framework\App\State $state,
-        \Magento\Framework\Stdlib\DateTime\DateTime $dateTime
+        FilePermissions $permissions,
+        Filesystem $filesystem,
+        CronScriptReadinessCheck $cronScriptReadinessCheck,
+        \PhpReadinessCheck $phpReadinessCheck,
+        LoggerInterface $logger,
+        State $state,
+        DateTime $dateTime,
+        ProgressBarFactory $progressBarFactory
     ) {
         $this->permissions = $permissions;
         $this->filesystem = $filesystem;
@@ -92,6 +106,7 @@ class Php extends Command
         $this->logger = $logger;
         $this->state = $state;
         $this->dateTime = $dateTime;
+        $this->progressBarFactory = $progressBarFactory;
         parent::__construct();
     }
 
@@ -109,21 +124,32 @@ class Php extends Command
 
         $this->output->writeln((string) __('[%1] Start', $this->dateTime->gmtDate()));
 
-        $progress = new ProgressBar($this->output, 5);
-        $progress->start();
+        /** @var ProgressBar $progress */
+        $progress = $this->progressBarFactory->create(
+            [
+                'output' => $this->output,
+                'max' => 5
+            ]
+        );
 
-        $this->output->writeln('');
+        $progress->setFormat(
+            "%current%/%max% [%bar%] %percent:3s%% %elapsed% %memory:6s% \t| %message%"
+        );
+
+        if ($output->getVerbosity() !== OutputInterface::VERBOSITY_NORMAL) {
+            $progress->setOverwrite(false);
+        }
 
         $memory = $this->phpMemoryLimitAction();
         if (isset($version['memory_limit']['error']) && $version['memory_limit']['error']) {
-            $this->output->writeln((string) __(
+            $progress->setMessage((string) __(
                 '[%1] <warning>PHP Memory</warning> : %2 : %3',
                 $this->dateTime->gmtDate(),
                 $version['memory_limit']['warning'],
                 $version['memory_limit']['message']
             ));
         } else {
-            $this->output->writeln((string) __(
+            $progress->setMessage((string) __(
                 '[%1] <info>PHP Memory</info> : Requirements met',
                 $this->dateTime->gmtDate()
             ));
@@ -135,7 +161,7 @@ class Php extends Command
 
         $version = $this->phpVersionAction($type);
         if (isset($version['data']['required'])) {
-            $this->output->writeln((string) __(
+            $progress->setMessage((string) __(
                 '[%1] <info>PHP Version</info> Required : %2',
                 $this->dateTime->gmtDate(),
                 $version['data']['required']
@@ -143,7 +169,7 @@ class Php extends Command
         }
 
         if (isset($version['data']['current'])) {
-            $this->output->writeln((string) __(
+            $progress->setMessage((string) __(
                 '[%1] <info>PHP Version</info> Current : %2',
                 $this->dateTime->gmtDate(),
                 $version['data']['current']
@@ -157,7 +183,7 @@ class Php extends Command
         $extensions = $this->phpExtensionsAction($type);
         if (isset($extensions['data']['required'])) {
             foreach ($extensions['data']['required'] as $required) {
-                $this->output->writeln((string) __(
+                $progress->setMessage((string) __(
                     '[%1] <info>PHP Extension</info> Required : %2',
                     $this->dateTime->gmtDate(),
                     $required
@@ -167,14 +193,14 @@ class Php extends Command
 
         if (isset($extensions['data']['missing'])) {
             if (empty($extensions['data']['missing'])) {
-                $this->output->writeln((string) __(
+                $progress->setMessage((string) __(
                     '[%1] <info>PHP Extension</info> Missing : <info>%2</info>',
                     $this->dateTime->gmtDate(),
                     'None'
                 ));
             }
             foreach ($extensions['data']['missing'] as $missing) {
-                $this->output->writeln((string) __(
+                $progress->setMessage((string) __(
                     '[%1] <error>PHP Extension</error> Missing : <error>%2</error>',
                     $this->dateTime->gmtDate(),
                     $missing
@@ -187,7 +213,7 @@ class Php extends Command
 
         $settings = $this->phpSettingsAction($type);
         foreach ($settings['data'] as $key => $setting) {
-            $this->output->writeln((string) __(
+            $progress->setMessage((string) __(
                 '[%1] <error>PHP Setting</error> Update : <error>%2</error>',
                 $this->dateTime->gmtDate(),
                 $setting['message']
@@ -200,14 +226,14 @@ class Php extends Command
         $permissions = $this->filePermissionsAction();
         if (isset($permissions['data']['missing'])) {
             if (empty($permissions['data']['missing'])) {
-                $this->output->writeln((string) __(
+                $progress->setMessage((string) __(
                     '[%1] <info>Permissions</info> Missing : <info>%2</info>',
                     $this->dateTime->gmtDate(),
                     'None'
                 ));
             }
             foreach ($permissions['data']['missing'] as $missing) {
-                $this->output->writeln((string) __(
+                $progress->setMessage((string) __(
                     '[%1] <error>Permissions</error> Missing : <error>%2</error>',
                     $this->dateTime->gmtDate(),
                     $missing

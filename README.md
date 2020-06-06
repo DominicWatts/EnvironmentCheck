@@ -18,9 +18,13 @@ CLI script to check php and environment settings
 
 Run console command
 
-`xigen:check:platform [-t|--type TYPE]`
+`xigen:check:platform [-t|--type TYPE] [--]`
 
     php/bin magento xigen:check:platform
+    
+Verbose output
+
+    php/bin magento xigen:check:platform -v
 
     php/bin magento xigen:check:platform -t installer
 
