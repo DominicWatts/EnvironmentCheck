@@ -149,7 +149,7 @@ class Status
             throw new \RuntimeException(sprintf('Cannot add status information to "%s"', $filePath));
         }
         if ($isNewFile) {
-            chmod($filePath, 0777);
+            chmod($filePath, 0777); // phpcs:ignore
         }
         return $this;
     }

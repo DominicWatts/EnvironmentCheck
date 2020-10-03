@@ -41,15 +41,15 @@ class BasePackageInfo
     {
         // Locate composer.json for magento2-base module
         $filesPathList = [];
-        $vendorDir = require VENDOR_PATH;
+        $vendorDir = require VENDOR_PATH; // phpcs:ignore
         $basePackageComposerFilePath = $vendorDir . '/' . self::MAGENTO_BASE_PACKAGE_COMPOSER_JSON_FILE;
         if (!$this->reader->isExist($basePackageComposerFilePath)) {
-            throw new \Magento\Setup\Exception(
+            throw new \Xigen\PhpCheck\Magento\Setup\Exception(
                 'Could not locate ' . self::MAGENTO_BASE_PACKAGE_COMPOSER_JSON_FILE . ' file.'
             );
         }
         if (!$this->reader->isReadable($basePackageComposerFilePath)) {
-            throw new \Magento\Setup\Exception(
+            throw new \Xigen\PhpCheck\Magento\Setup\Exception(
                 'Could not read ' . self::MAGENTO_BASE_PACKAGE_COMPOSER_JSON_FILE . ' file.'
             );
         }
