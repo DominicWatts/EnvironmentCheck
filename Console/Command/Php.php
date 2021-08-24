@@ -2,25 +2,25 @@
 
 namespace Xigen\PhpCheck\Console\Command;
 
-use Symfony\Component\Console\Helper\Table;
 use Magento\Framework\App\Filesystem\DirectoryList;
+use Magento\Framework\App\State;
+use Magento\Framework\Filesystem;
+use Magento\Framework\Setup\FilePermissions;
+use Magento\Framework\Stdlib\DateTime\DateTime;
+use Psr\Log\LoggerInterface;
+use Symfony\Component\Console\Command\Command;
+use Symfony\Component\Console\Helper\ProgressBar;
+use Symfony\Component\Console\Helper\ProgressBarFactory;
+use Symfony\Component\Console\Helper\Table;
+use Symfony\Component\Console\Input\InputInterface;
+use Symfony\Component\Console\Input\InputOption;
+use Symfony\Component\Console\Output\OutputInterface;
 use Xigen\PhpCheck\Magento\Setup\Controller\ReadinessCheckInstaller;
 use Xigen\PhpCheck\Magento\Setup\Controller\ReadinessCheckUpdater;
 use Xigen\PhpCheck\Magento\Setup\Controller\ResponseTypeInterface;
 use Xigen\PhpCheck\Magento\Setup\Model\Cron\ReadinessCheck;
-use Symfony\Component\Console\Command\Command;
-use Symfony\Component\Console\Helper\ProgressBar;
-use Symfony\Component\Console\Helper\ProgressBarFactory;
-use Symfony\Component\Console\Input\InputInterface;
-use Symfony\Component\Console\Input\InputOption;
-use Symfony\Component\Console\Output\OutputInterface;
-use Magento\Framework\Setup\FilePermissions;
-use Magento\Framework\Filesystem;
 use Xigen\PhpCheck\Magento\Setup\Model\CronScriptReadinessCheck;
 use Xigen\PhpCheck\Magento\Setup\Model\PhpReadinessCheck;
-use Psr\Log\LoggerInterface;
-use Magento\Framework\App\State;
-use Magento\Framework\Stdlib\DateTime\DateTime;
 
 /**
  * Environment check Php console command
@@ -258,7 +258,7 @@ class Php extends Command
             ]);
             $progress->advance();
         }
-        
+
         if (isset($permissions['data']['missing'])) {
             if (empty($permissions['data']['missing'])) {
                 $progress->setMessage((string) __(
@@ -289,7 +289,7 @@ class Php extends Command
         $this->output->writeln('');
 
         $table->render();
-        
+
         $this->output->writeln('');
         $this->output->writeln((string) __('[%1] Finish', $this->dateTime->gmtDate()));
     }
