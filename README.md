@@ -6,6 +6,8 @@
 
 ![PHPStan](https://github.com/DominicWatts/EnvironmentCheck/workflows/PHPStan/badge.svg)
 
+![php-cs-fixer](https://github.com/DominicWatts/EnvironmentCheck/workflows/php-cs-fixer/badge.svg)
+
 CLI script to check php and environment settings
 
 # Install instructions #
