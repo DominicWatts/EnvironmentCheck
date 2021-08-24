@@ -2,6 +2,7 @@ parameters:
     level: 0
     autoload_directories:
         - Console
+        - Magento
     excludes_analyse:
         - 'vendor'
     ignoreErrors:
