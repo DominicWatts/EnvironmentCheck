@@ -4,6 +4,7 @@ namespace Xigen\PhpCheck\Console\Command;
 
 use Magento\Framework\App\Filesystem\DirectoryList;
 use Magento\Framework\App\State;
+use Magento\Framework\Console\Cli;
 use Magento\Framework\Filesystem;
 use Magento\Framework\Setup\FilePermissions;
 use Magento\Framework\Stdlib\DateTime\DateTime;
@@ -112,6 +113,7 @@ class Php extends Command
 
     /**
      * {@inheritdoc}
+     * @return int
      */
     protected function execute(
         InputInterface $input,
@@ -292,6 +294,7 @@ class Php extends Command
 
         $this->output->writeln('');
         $this->output->writeln((string) __('[%1] Finish', $this->dateTime->gmtDate()));
+        return Cli::RETURN_SUCCESS;
     }
 
     /**
